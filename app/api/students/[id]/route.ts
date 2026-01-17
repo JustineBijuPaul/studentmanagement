@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStudentById, updateStudent, deleteStudent } from '@/lib/db/queries';
 import { StudentSchema } from '@/lib/db/types';
-import { z } from 'zod';
+import { ZodError } from 'zod';
 
 export async function GET(
   request: NextRequest,
@@ -57,10 +57,10 @@ export async function PUT(
     
     const updatedStudent = await updateStudent(studentId, updates);
     return NextResponse.json({ success: true, data: updatedStudent });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Validation error', details: error.errors },
+        { success: false, error: 'Validation error', details: error.issues },
         { status: 400 }
       );
     }

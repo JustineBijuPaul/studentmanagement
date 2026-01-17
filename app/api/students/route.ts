@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllStudents, createStudent } from '@/lib/db/queries';
 import { CreateStudentSchema } from '@/lib/db/types';
-import { z } from 'zod';
+import { ZodError } from 'zod';
 
 export async function GET() {
   try {
@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
       { success: true, data: newStudent },
       { status: 201 }
     );
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Validation error', details: error.errors },
+        { success: false, error: 'Validation error', details: error.issues },
         { status: 400 }
       );
     }

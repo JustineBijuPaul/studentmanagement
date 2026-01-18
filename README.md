@@ -116,7 +116,51 @@ studentmanagement/
 
 ## AWS Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive AWS infrastructure setup guide.
+### Quick Setup for EC2
+
+For deploying on AWS EC2 with Secrets Manager, see:
+- 📘 [AWS_SETUP.md](AWS_SETUP.md) - Quick start guide for EC2 deployment
+- 📘 [AWS_DEPLOYMENT_GUIDE.md](AWS_DEPLOYMENT_GUIDE.md) - Step-by-step deployment instructions
+- 📘 [DEPLOYMENT.md](DEPLOYMENT.md) - Complete AWS infrastructure setup
+
+### Key Files for AWS
+
+- [`setup-secrets-manager.sh`](setup-secrets-manager.sh) - Script to create AWS Secrets Manager secret
+- [`test-aws-config.sh`](test-aws-config.sh) - Script to verify AWS configuration on EC2
+- [`.env.production`](.env.production) - Production environment template
+
+### Quick AWS Setup
+
+1. **Create Secret in AWS Secrets Manager**
+   ```bash
+   ./setup-secrets-manager.sh
+   ```
+
+2. **Configure EC2 Environment**
+   ```bash
+   # On EC2 instance, create .env file:
+   USE_SECRETS_MANAGER=true
+   DB_SECRET_ARN=arn:aws:secretsmanager:us-east-1:xxx:secret:rds-db-credentials-xxx
+   AWS_REGION=us-east-1
+   ```
+
+3. **Verify Configuration**
+   ```bash
+   ./test-aws-config.sh
+   ```
+
+4. **Deploy Application**
+   ```bash
+   npm install
+   npm run build
+   npm start
+   ```
+
+### IAM Role Requirements
+
+Your EC2 instance must have **LabInstanceProfile** IAM role with:
+- `secretsmanager:GetSecretValue`
+- `secretsmanager:DescribeSecret`
 
 ## Troubleshooting
 

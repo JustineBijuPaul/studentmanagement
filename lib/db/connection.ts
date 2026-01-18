@@ -17,6 +17,10 @@ async function getDbCredentialsFromSecretsManager(): Promise<DbCredentials> {
   });
 
   try {
+    console.log('Fetching credentials from Secrets Manager...');
+    console.log('Secret ARN:', process.env.DB_SECRET_ARN);
+    console.log('Region:', process.env.AWS_REGION || 'us-east-1');
+    
     const response = await client.send(
       new GetSecretValueCommand({
         SecretId: process.env.DB_SECRET_ARN,
@@ -25,6 +29,7 @@ async function getDbCredentialsFromSecretsManager(): Promise<DbCredentials> {
 
     if (response.SecretString) {
       const secret = JSON.parse(response.SecretString);
+      console.log('Successfully retrieved credentials from Secrets Manager');
       return {
         host: secret.host,
         port: secret.port || 3306,
@@ -36,6 +41,10 @@ async function getDbCredentialsFromSecretsManager(): Promise<DbCredentials> {
     throw new Error('Secret string not found');
   } catch (error) {
     console.error('Error fetching credentials from Secrets Manager:', error);
+    console.error('Make sure:');
+    console.error('1. DB_SECRET_ARN is set correctly in .env');
+    console.error('2. IAM role (LabInstanceProfile) has secretsmanager:GetSecretValue permission');
+    console.error('3. EC2 instance has the IAM role attached');
     throw error;
   }
 }
@@ -57,11 +66,23 @@ export async function getDbConnection(): Promise<mysql.Pool> {
 
   let credentials: DbCredentials;
 
-  if (process.env.USE_SECRETS_MANAGER === 'true') {
+  const useSecretsManager = process.env.USE_SECRETS_MANAGER === 'true';
+  console.log('USE_SECRETS_MANAGER:', useSecretsManager);
+
+  if (useSecretsManager) {
+    console.log('Using AWS Secrets Manager for database credentials');
     credentials = await getDbCredentialsFromSecretsManager();
   } else {
+    console.log('Using local environment variables for database credentials');
     credentials = getLocalDbCredentials();
   }
+
+  console.log('Connecting to database:', {
+    host: credentials.host,
+    port: credentials.port,
+    user: credentials.username,
+    database: credentials.database,
+  });
 
   pool = mysql.createPool({
     host: credentials.host,

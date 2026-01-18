@@ -1,32 +1,21 @@
 import { NextResponse } from 'next/server';
-import { getPool } from '@/app/lib/db';
 
 /**
- * GET /api/health - Health check endpoint for AWS Load Balancer
+ * GET /api/health - Lightweight health check endpoint for AWS Load Balancer
+ * 
+ * This endpoint does NOT check the database to avoid health check failures
+ * when the DB is slow or temporarily unavailable.
+ * 
+ * The ALB only needs to know if the application server is running,
+ * not if downstream services are available.
  */
 export async function GET() {
-  try {
-    // Test database connection
-    const pool = await getPool();
-    await pool.query('SELECT 1');
-
-    return NextResponse.json(
-      {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        database: 'connected',
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Health check failed:', error);
-    return NextResponse.json(
-      {
-        status: 'unhealthy',
-        timestamp: new Date().toISOString(),
-        database: 'disconnected',
-      },
-      { status: 503 }
-    );
-  }
+  return NextResponse.json(
+    {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    },
+    { status: 200 }
+  );
 }

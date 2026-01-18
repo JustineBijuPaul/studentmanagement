@@ -5,7 +5,10 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 export async function getAllStudents(): Promise<Student[]> {
   const connection = await getDbConnection();
   const [rows] = await connection.query<RowDataPacket[]>(
-    'SELECT * FROM students ORDER BY enrollmentDate DESC'
+    `SELECT id, first_name as firstName, last_name as lastName, email, phone, 
+            enrollment_date as enrollmentDate, major, status, graduation_year as graduationYear,
+            created_at as createdAt, updated_at as updatedAt
+     FROM students ORDER BY enrollment_date DESC`
   );
   return rows as Student[];
 }
@@ -13,7 +16,10 @@ export async function getAllStudents(): Promise<Student[]> {
 export async function getStudentById(id: number): Promise<Student | null> {
   const connection = await getDbConnection();
   const [rows] = await connection.query<RowDataPacket[]>(
-    'SELECT * FROM students WHERE id = ?',
+    `SELECT id, first_name as firstName, last_name as lastName, email, phone, 
+            enrollment_date as enrollmentDate, major, status, graduation_year as graduationYear,
+            created_at as createdAt, updated_at as updatedAt
+     FROM students WHERE id = ?`,
     [id]
   );
   return rows.length > 0 ? (rows[0] as Student) : null;
@@ -22,7 +28,7 @@ export async function getStudentById(id: number): Promise<Student | null> {
 export async function createStudent(student: CreateStudent): Promise<Student> {
   const connection = await getDbConnection();
   const [result] = await connection.query<ResultSetHeader>(
-    `INSERT INTO students (firstName, lastName, email, phone, enrollmentDate, major, status, graduationYear)
+    `INSERT INTO students (first_name, last_name, email, phone, enrollment_date, major, status, graduation_year)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       student.firstName,
@@ -46,11 +52,19 @@ export async function createStudent(student: CreateStudent): Promise<Student> {
 export async function updateStudent(id: number, updates: Partial<CreateStudent>): Promise<Student> {
   const connection = await getDbConnection();
   
+  const fieldMapping: Record<string, string> = {
+    firstName: 'first_name',
+    lastName: 'last_name',
+    enrollmentDate: 'enrollment_date',
+    graduationYear: 'graduation_year',
+  };
+  
   const fields: string[] = [];
   const values: any[] = [];
   
   Object.entries(updates).forEach(([key, value]) => {
-    fields.push(`${key} = ?`);
+    const dbField = fieldMapping[key] || key;
+    fields.push(`${dbField} = ?`);
     values.push(value);
   });
   
